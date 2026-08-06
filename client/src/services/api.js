@@ -51,6 +51,12 @@ export function updateStaffStatus(staffId, status) {
   });
 }
 
+export function deleteStaffMember(staffId) {
+  return apiRequest(`/api/staff/${staffId}`, {
+    method: "DELETE",
+  });
+}
+
 export function getWorkTypes() {
   return apiRequest("/api/work-areas");
 }

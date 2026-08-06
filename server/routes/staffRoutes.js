@@ -294,4 +294,48 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/staff/:id
+ */
+router.delete("/:id", async (req, res) => {
+  const staffId = Number(req.params.id);
+
+  if (!Number.isInteger(staffId)) {
+    return res.status(400).json({
+      message: "Invalid staff member ID.",
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+        DELETE FROM staff_members
+        WHERE id = $1
+        RETURNING
+          id,
+          name,
+          department,
+          status,
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+      `,
+      [staffId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Staff member not found.",
+      });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Failed to delete staff member:", error);
+
+    res.status(500).json({
+      message: "Unable to delete the staff member.",
+    });
+  }
+});
+
 module.exports = router;

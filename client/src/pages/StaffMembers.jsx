@@ -3,6 +3,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Trash2,
   UserRoundX,
   Users,
 } from "lucide-react";
@@ -12,6 +13,7 @@ import StaffFormModal from "../components/StaffFormModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
   createStaffMember,
+  deleteStaffMember,
   getStaffMembers,
   updateStaffMember,
   updateStaffStatus,
@@ -37,6 +39,7 @@ function StaffMembers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [statusTarget, setStatusTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     async function loadStaffMembers() {
@@ -181,6 +184,28 @@ function StaffMembers() {
     }
   }
 
+  async function handleDeleteStaff() {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    try {
+      await deleteStaffMember(deleteTarget.id);
+
+      setStaffMembers((currentStaff) =>
+        currentStaff.filter((member) => member.id !== deleteTarget.id)
+      );
+
+      setMessage(`${deleteTarget.name} was deleted.`);
+      setDeleteTarget(null);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   return (
     <div className="page staff-page">
       <header className="page-header">
@@ -300,6 +325,15 @@ function StaffMembers() {
 
                 <button
                   type="button"
+                  className="icon-button icon-button--danger"
+                  onClick={() => setDeleteTarget(staffMember)}
+                  aria-label={`Delete ${staffMember.name}`}
+                >
+                  <Trash2 size={18} />
+                </button>
+
+                <button
+                  type="button"
                   className={
                     staffMember.status === "active"
                       ? "icon-button icon-button--danger"
@@ -346,6 +380,15 @@ function StaffMembers() {
         tone={statusTarget?.status === "active" ? "danger" : "primary"}
         onCancel={() => setStatusTarget(null)}
         onConfirm={() => handleStatusChange(statusTarget)}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Delete staff member?"
+        message={`${deleteTarget?.name} will be permanently removed from the staff list.`}
+        confirmLabel="Delete Staff"
+        tone="danger"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteStaff}
       />
     </div>
   );
