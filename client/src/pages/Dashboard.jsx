@@ -12,8 +12,8 @@ import {
   getISOWeekNumber,
   getWorkWeekDates,
 } from "../utils/dateUtils";
-import { loadSavedSchedules, saveSchedule } from "../services/historyStorage";
-import { getStaffMembers, getWorkTypes } from "../services/api";
+import { migrateLocalScheduleHistory } from "../services/historyStorage";
+import { createSchedule, getSchedules, getStaffMembers, getWorkTypes } from "../services/api";
 
 function getInitials(name) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("");
@@ -94,15 +94,20 @@ function Dashboard() {
   const [message, setMessage] = useState("");
   const [staffMembers, setStaffMembers] = useState([]);
   const [workTypes, setWorkTypes] = useState([]);
+  const [savedSchedules, setSavedSchedules] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [generation, setGeneration] = useState(0);
 
   useEffect(() => {
     async function loadRotationData() {
       try {
-        const [staff, types] = await Promise.all([getStaffMembers(), getWorkTypes()]);
+        await migrateLocalScheduleHistory();
+        const [staff, types, schedules] = await Promise.all([
+          getStaffMembers(), getWorkTypes(), getSchedules(),
+        ]);
         setStaffMembers(staff);
         setWorkTypes(types);
+        setSavedSchedules(schedules);
       } catch (error) {
         setMessage(error.message);
       } finally {
@@ -140,7 +145,7 @@ function Dashboard() {
       return;
     }
 
-    setRotation(buildRotation(workTypes, staffMembers, loadSavedSchedules(), weekNumber, generation));
+    setRotation(buildRotation(workTypes, staffMembers, savedSchedules, weekNumber, generation));
     setGeneration((current) => current + 1);
     setMessage(`Fair rotation generated from saved assignment history for ${activeStaffCount} active staff.`);
   }
@@ -150,25 +155,28 @@ function Dashboard() {
     setMessage("");
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (rotation.length === 0) {
       setMessage("Generate a rotation before saving.");
       return;
     }
 
     const schedule = {
-      id: Date.now(),
       department,
       weekNumber,
       dates: workWeek
         ? `${formatDate(workWeek.friday)} – ${formatDate(workWeek.sunday)}`
         : "",
       rotation,
-      createdAt: new Date().toISOString(),
     };
 
-    saveSchedule(schedule);
-    setMessage(`Week ${weekNumber} schedule saved successfully.`);
+    try {
+      const savedSchedule = await createSchedule(schedule);
+      setSavedSchedules((current) => [savedSchedule, ...current]);
+      setMessage(`Week ${weekNumber} schedule saved successfully.`);
+    } catch (error) {
+      setMessage(error.message);
+    }
   }
 
   return (

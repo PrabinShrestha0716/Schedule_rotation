@@ -72,3 +72,22 @@ export function updateWorkType(id, workType) {
 export function updateWorkTypeStatus(id, status) {
   return apiRequest(`/api/work-areas/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 }
+
+export function getSchedules() {
+  return apiRequest("/api/schedules");
+}
+
+export function getSchedule(id) {
+  return apiRequest(`/api/schedules/${id}`);
+}
+
+export function createSchedule(schedule) {
+  return apiRequest("/api/schedules", {
+    method: "POST",
+    body: JSON.stringify(schedule),
+  });
+}
+
+export function deleteSavedSchedule(id) {
+  return apiRequest(`/api/schedules/${id}`, { method: "DELETE" });
+}

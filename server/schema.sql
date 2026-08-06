@@ -32,3 +32,17 @@ CREATE TABLE IF NOT EXISTS work_areas (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS schedules (
+  id BIGSERIAL PRIMARY KEY,
+  legacy_id BIGINT UNIQUE,
+  department VARCHAR(100) NOT NULL,
+  week_number INTEGER NOT NULL CHECK (week_number BETWEEN 1 AND 53),
+  dates VARCHAR(150) NOT NULL,
+  rotation JSONB NOT NULL DEFAULT '[]'::jsonb
+    CHECK (jsonb_typeof(rotation) = 'array'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS schedules_created_at_idx
+  ON schedules (created_at DESC);

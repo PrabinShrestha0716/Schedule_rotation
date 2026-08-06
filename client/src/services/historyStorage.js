@@ -1,3 +1,5 @@
+import { createSchedule } from "./api";
+
 const STORAGE_KEY = "schedule_history";
 
 export function loadSavedSchedules() {
@@ -41,4 +43,16 @@ export function deleteSchedule(scheduleId) {
     (schedule) => schedule.id.toString() !== scheduleId.toString()
   );
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSchedules));
+}
+
+export async function migrateLocalScheduleHistory() {
+  const schedules = loadSavedSchedules();
+  if (!schedules.length) return;
+
+  await Promise.all(
+    schedules.map((schedule) =>
+      createSchedule({ ...schedule, legacyId: schedule.id })
+    )
+  );
+  window.localStorage.removeItem(STORAGE_KEY);
 }

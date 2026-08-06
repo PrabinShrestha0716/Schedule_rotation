@@ -1,13 +1,30 @@
 import { ChevronRight, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteSchedule, loadSavedSchedules } from "../services/historyStorage";
+import { migrateLocalScheduleHistory } from "../services/historyStorage";
+import { deleteSavedSchedule, getSchedules } from "../services/api";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 function History() {
   const [search, setSearch] = useState("");
-  const [schedules, setSchedules] = useState(() => loadSavedSchedules());
+  const [schedules, setSchedules] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        await migrateLocalScheduleHistory();
+        setSchedules(await getSchedules());
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadHistory();
+  }, []);
 
   const filteredSchedules = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -25,12 +42,16 @@ function History() {
     setDeleteTarget(schedule);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
     const schedule = deleteTarget;
-    deleteSchedule(schedule.id);
-    setSchedules((current) => current.filter((item) => item.id !== schedule.id));
-    setDeleteTarget(null);
+    try {
+      await deleteSavedSchedule(schedule.id);
+      setSchedules((current) => current.filter((item) => item.id !== schedule.id));
+      setDeleteTarget(null);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }
 
   return (
@@ -40,7 +61,10 @@ function History() {
         <Search size={18} />
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by week number or dates" aria-label="Search schedule history" />
       </div>
-      {filteredSchedules.length === 0 ? (
+      {error && <div className="error-message" role="alert">{error}</div>}
+      {isLoading ? (
+        <div className="empty-state"><p>Loading schedule history...</p></div>
+      ) : filteredSchedules.length === 0 ? (
         <div className="empty-state"><p>No saved schedules yet. Save a rotation to see it here.</p></div>
       ) : (
         <div className="history-list">

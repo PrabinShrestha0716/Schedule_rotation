@@ -1,14 +1,32 @@
 ﻿import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowRight, Users } from "lucide-react";
-import { loadScheduleById } from "../services/historyStorage";
+import { useEffect, useState } from "react";
+import { getSchedule } from "../services/api";
 
 function ScheduleDetails() {
   const { scheduleId } = useParams();
-  const schedule = useMemo(
-    () => loadScheduleById(scheduleId),
-    [scheduleId]
-  );
+  const normalizedScheduleId = useMemo(() => scheduleId, [scheduleId]);
+  const [schedule, setSchedule] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadSchedule() {
+      try {
+        setSchedule(await getSchedule(normalizedScheduleId));
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadSchedule();
+  }, [normalizedScheduleId]);
+
+  if (isLoading) {
+    return <div className="page"><p>Loading schedule...</p></div>;
+  }
 
   if (!schedule) {
     return (
@@ -17,7 +35,7 @@ function ScheduleDetails() {
           <h1>Schedule not found</h1>
         </header>
 
-        <p>The requested schedule could not be found.</p>
+        <p>{error || "The requested schedule could not be found."}</p>
       </div>
     );
   }

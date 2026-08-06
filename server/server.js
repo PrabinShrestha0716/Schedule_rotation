@@ -8,6 +8,7 @@ const path = require("path");
 const pool = require("./db");
 const staffRoutes = require("./routes/staffRoutes");
 const workAreaRoutes = require("./routes/workAreaRoutes");
+const scheduleRoutes = require("./routes/scheduleRoutes");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -44,6 +45,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/staff", staffRoutes);
 app.use("/api/work-areas", workAreaRoutes);
+app.use("/api/schedules", scheduleRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
