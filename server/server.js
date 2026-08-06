@@ -14,10 +14,19 @@ const port = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      process.env.FRONTEND_URL,
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("CORS policy denied this origin."));
+    },
   })
 );
 
@@ -52,8 +61,8 @@ async function startServer() {
     const schema = await fs.readFile(path.join(__dirname, "schema.sql"), "utf8");
     await pool.query(schema);
 
-    app.listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server running at http://0.0.0.0:${port}`);
     });
   } catch (error) {
     console.error("Unable to initialize the database:", error);

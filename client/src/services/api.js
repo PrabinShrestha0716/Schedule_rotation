@@ -1,8 +1,11 @@
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
+function buildUrl(path) {
+  return new URL(path, API_URL).toString();
+}
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(buildUrl(path), {
     ...options,
     headers: {
       "Content-Type": "application/json",
