@@ -17,6 +17,9 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         "http://localhost:5173",
+        "http://localhost:3000",
+        "https://schedulerotation.netlify.app",
+        "https://www.schedulerotation.netlify.app",
         process.env.FRONTEND_URL,
       ].filter(Boolean);
 

@@ -1,7 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const API_URL = configuredApiUrl || (typeof window !== "undefined" ? window.location.origin : "http://localhost:4000");
 
 function buildUrl(path) {
-  return new URL(path, API_URL).toString();
+  const normalizedBase = API_URL.endsWith("/") ? API_URL : `${API_URL}/`;
+  return new URL(path.replace(/^\/+/, ""), normalizedBase).toString();
 }
 
 async function apiRequest(path, options = {}) {
